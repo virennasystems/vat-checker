@@ -1,33 +1,23 @@
-# .github/workflows/ci.yml
 name: CI
-on: [push, pull_request]
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
+    name: build
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Debug tree
-        run: |
-          pwd
-          ls -la
-          git branch --show-current
-
-      - name: Install deps (requirements oder pyproject)
-        if: hashFiles('requirements.txt') != ''
-        run: pip install -r requirements.txt
-
-      - name: Fallback install via pyproject (optional)
-        if: hashFiles('requirements.txt') == '' && hashFiles('pyproject.toml') != ''
-        run: pip install .
-
-      - name: Run pytest
-        run: |
-          if [ -d tests ]; then
-            pytest -q || [ $? -eq 5 ]  # OK wenn keine Tests gefunden
-          else
-            echo "No tests directory, skipping."
-          fi
+    env:
+      # erlaubt Imports wie "from app.core import ..."
+      PYTHONPATH: ${{ github.worksp
