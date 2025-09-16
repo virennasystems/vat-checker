@@ -9,5 +9,25 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - run: pip install -r requirements.txt
-      - run: pytest
+
+      - name: Debug tree
+        run: |
+          pwd
+          ls -la
+          git branch --show-current
+
+      - name: Install deps (requirements oder pyproject)
+        if: hashFiles('requirements.txt') != ''
+        run: pip install -r requirements.txt
+
+      - name: Fallback install via pyproject (optional)
+        if: hashFiles('requirements.txt') == '' && hashFiles('pyproject.toml') != ''
+        run: pip install .
+
+      - name: Run pytest
+        run: |
+          if [ -d tests ]; then
+            pytest -q || [ $? -eq 5 ]  # OK wenn keine Tests gefunden
+          else
+            echo "No tests directory, skipping."
+          fi
